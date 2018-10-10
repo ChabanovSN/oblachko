@@ -39,9 +39,9 @@ public class NIO_CLIENT_1 {
             isConnected=true;
             try {
                 ObjectOutputStream  out = new ObjectOutputStream(socketChannel.socket().getOutputStream());
-                String fileName = "clientFolder/123.text";
-                PlainText plainText= Converter.convertionFileToClass(fileName);
-                SerializationText.serialization(out,plainText);
+              //  String fileName = "clientFolder/123.text";
+              //  PlainText plainText= Converter.convertionFileToClass(fileName);
+              //  SerializationText.serialization(out,plainText);
             } catch (IOException e) {
                 e.printStackTrace();
             }

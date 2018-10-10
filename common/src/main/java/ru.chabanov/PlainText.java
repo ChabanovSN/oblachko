@@ -5,6 +5,11 @@ import java.io.Serializable;
 public class PlainText implements Serializable {
     private String nameFile;
     private String content;
+    private int commands;
+
+    public PlainText(int commands) {
+        this.commands = commands;
+    }
 
     public PlainText(String nameFile, String content) {
         this.nameFile = nameFile;
@@ -30,6 +35,14 @@ public class PlainText implements Serializable {
     @Override
     public String toString() {
 
-        return  Converter.lastName(nameFile);
+        return  nameFile;
+    }
+
+    public int getCommands() {
+        return commands;
+    }
+
+    public void setCommands(int commands) {
+        this.commands = commands;
     }
 }

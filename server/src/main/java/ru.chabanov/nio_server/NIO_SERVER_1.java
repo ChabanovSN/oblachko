@@ -32,7 +32,7 @@ public class NIO_SERVER_1 {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
-            Converter.convertionClassToFile(newPlainText);
+        //    Converter.convertionClassToFile(newPlainText);
         } catch (IOException e) {
             e.printStackTrace();
         }

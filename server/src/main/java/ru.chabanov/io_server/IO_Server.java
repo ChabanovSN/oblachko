@@ -9,7 +9,7 @@ import java.net.Socket;
 
 public class IO_Server extends Thread {
     public static final int PORT_NUMBER = 8080;
-
+    private static  final  String PATH_TO_MAIN_FOLDER = "C:\\Users\\User\\Desktop\\serverFolder\\";
     protected Socket socket;
 
     private IO_Server(Socket socket) {
@@ -24,15 +24,22 @@ public class IO_Server extends Thread {
         try {
             in = new ObjectInputStream(socket.getInputStream());
             out = new ObjectOutputStream(socket.getOutputStream());
-            String fileName = "clientFolder/123.text";
 
-            PlainText newPlainText= null;
+
+           PlainText newPlainText;
             try {
-                newPlainText = (PlainText) SerializationText.deSerialization(in);
+
+                    newPlainText = (PlainText) SerializationText.deSerialization(in);
+                    System.out.println("Receive " + newPlainText.toString());
+                    if(newPlainText.getNameFile() !=null || newPlainText.getContent() !=null)
+                    Converter.convertionClassToFile(newPlainText, PATH_TO_MAIN_FOLDER);
+
+                if(newPlainText.getCommands()==1)
+                    Converter.doingCommands(newPlainText,PATH_TO_MAIN_FOLDER);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
-            Converter.convertionClassToFile(newPlainText);
+
 
         //    PlainText plainText= Converter.convertionFileToClass(fileName);
         //    SerializationText.serialization(out,plainText);

@@ -8,21 +8,16 @@ import java.util.List;
 
 public class Converter {
     private static List<PlainText> plainTextList = new ArrayList<>();
-    public static String lastName(String namefale){
-        String[] names = namefale.split("/");
-        int len = names.length;
-        if(len>1) return names[names.length-1];
-        else return names[0];
-    }
 
-    public static List<PlainText> getPlainTextList() {
+
+    public static List<PlainText> getPlainTextList( String pathFolder) {
         try {
-            Path path = Paths.get("clientFolder");
+            Path path = Paths.get(pathFolder);
         Files.walkFileTree(path,new SimpleFileVisitor<Path>(){
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 
-           plainTextList.add(convertionFileToClass(file.toString()));
+           plainTextList.add(convertionFileToClass(file.toFile()));
 
                 return FileVisitResult.CONTINUE;
             }
@@ -42,19 +37,22 @@ public class Converter {
         return plainTextList;
     }
 
-    public static void convertionClassToFile(PlainText newPlainText) {
-        File file = new File(lastName("clientFolder/"+newPlainText.getNameFile()));
+    public static void convertionClassToFile(PlainText newPlainText, String path) {
+        File file = new File(path+newPlainText.getNameFile());
+      //  if(file.exists())file.mkdir();
         try {
+
             FileWriter writer = new FileWriter(file);
             writer.write(newPlainText.getContent());
             writer.flush();
             writer.close();
+            System.out.println(file.getName()+" convertionClassToFile");
         } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
-    public static PlainText convertionFileToClass(String fileName) {
+    public static PlainText convertionFileToClass(File fileName) {
 
         BufferedReader br = null;
         StringBuilder sb = new StringBuilder();
@@ -79,11 +77,22 @@ public class Converter {
             }
         }
 
-        return new PlainText(fileName,sb.toString());
+        return new PlainText(fileName.getName(),sb.toString());
+    }
+
+    public static void doingCommands( PlainText commands,String path){
+        switch (commands.getCommands()){
+            case 1:
+                for(PlainText plainText : getPlainTextList(path))
+                    System.out.println(plainText.toString());
+                break;
+                default:
+                    System.out.println("Нет комманды");
+        }
     }
 
     public static void main(String[] args) {
-        for(PlainText plainText : getPlainTextList())
+        for(PlainText plainText : getPlainTextList("C:\\Users\\User\\Desktop\\clientFolder"))
             System.out.println(plainText.toString());
 
     }

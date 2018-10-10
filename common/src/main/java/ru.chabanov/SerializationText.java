@@ -17,6 +17,7 @@ public class SerializationText {
 
         ObjectOutputStream oos = new ObjectOutputStream(outputStream);
         oos.writeObject(object);
+        oos.flush();
         oos.close();
 
    }

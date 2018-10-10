@@ -6,10 +6,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -21,7 +18,8 @@ import java.util.List;
 
 public class Client_FX extends Application
 {
-   private static IO_Client io_client;
+
+private static final String PATH_TO_MAIN_FOLDER= "C:\\Users\\User\\Desktop\\clientFolder";
 
 
 
@@ -36,7 +34,7 @@ public class Client_FX extends Application
     static final DataFormat FILE_LIST = new DataFormat("PlainTextList");
 
     public static void main(String[] args)
-    {    io_client = new IO_Client();
+    {
         Application.launch(args);
     }
 
@@ -47,6 +45,15 @@ public class Client_FX extends Application
         Label sourceListLbl = new Label("Клиент: ");
         Label targetListLbl = new Label("Сервер: ");
         Label messageLbl = new Label("Клиент-Сервер grag and drop  ");
+        Button showListFilesOnServer = new Button("Show list");
+        showListFilesOnServer.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+             PlainText commands = new PlainText(1);
+
+              new IO_Client().ascceptCommand(commands);
+            }
+        });
 
         // Set the Size of the Views and the LoggingArea
         sourceView.setPrefSize(200, 200);
@@ -69,7 +76,7 @@ public class Client_FX extends Application
         pane.add(messageLbl, 0, 0, 3, 1);
         pane.addRow(1, sourceListLbl, targetListLbl);
         pane.addRow(2, sourceView, targetView);
-
+        pane.add(showListFilesOnServer,0,3,3,1);
         // Add mouse event handlers for the source
         sourceView.setOnDragDetected(new EventHandler <MouseEvent>()
         {
@@ -93,6 +100,7 @@ public class Client_FX extends Application
             {
                 writelog("Файл на клиенте");
                 dragDropped(event, sourceView);
+            //    io_client.sendIO_Client(sourceView.getItems());
             }
         });
 
@@ -101,6 +109,7 @@ public class Client_FX extends Application
             public void handle(DragEvent event)
             {
                   dragDone(event, sourceView);
+
             }
         });
 
@@ -126,8 +135,9 @@ public class Client_FX extends Application
             public void handle(DragEvent event)
             {
                 writelog("Файл на сервере");
+            //    new IO_Client().sendIO_Client(targetView.getItems());
                 dragDropped(event, targetView);
-                io_client.sendIO_Client(targetView.getItems());
+
             }
         });
 
@@ -165,7 +175,7 @@ public class Client_FX extends Application
     private ObservableList<PlainText> getFileList()
     {
         ObservableList<PlainText> list = FXCollections.<PlainText>observableArrayList();
-list.addAll(Converter.getPlainTextList());
+list.addAll(Converter.getPlainTextList(PATH_TO_MAIN_FOLDER));
          return list;
     }
 
@@ -217,6 +227,7 @@ list.addAll(Converter.getPlainTextList());
         if(dragboard.hasContent(FILE_LIST))
         {
             ArrayList<PlainText> list = (ArrayList<PlainText>)dragboard.getContent(FILE_LIST);
+
             listView.getItems().addAll(list);
             // Data transfer is successful
             dragCompleted = true;
@@ -230,6 +241,11 @@ list.addAll(Converter.getPlainTextList());
     private void dragDone(DragEvent event, ListView<PlainText> listView)
     {
 
+        Dragboard dragboard = event.getDragboard();
+        if(dragboard.hasContent(FILE_LIST)){
+            ArrayList<PlainText> list = (ArrayList<PlainText>)dragboard.getContent(FILE_LIST);
+            new IO_Client().sendIO_Client(list);
+        }
         TransferMode tm = event.getTransferMode();
 
         if (tm == TransferMode.MOVE)

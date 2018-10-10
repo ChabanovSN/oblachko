@@ -33,10 +33,10 @@ public class NettyClient {
             Channel channel = bootstrap.connect(host,port).sync().channel();
 
             String fileName = "clientFolder/123.text";
-            PlainText plainText= Converter.convertionFileToClass(fileName);
+          //  PlainText plainText= Converter.convertionFileToClass(fileName);
 
 
-              channel.write(plainText);
+           //   channel.write(plainText);
               channel.flush();
             // mode chat
 
