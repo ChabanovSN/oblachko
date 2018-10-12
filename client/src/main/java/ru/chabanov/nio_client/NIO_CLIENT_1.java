@@ -1,52 +1,78 @@
 package ru.chabanov.nio_client;
 
+import ru.chabanov.Client_communication;
 import ru.chabanov.Converter;
 import ru.chabanov.PlainText;
 import ru.chabanov.SerializationText;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.List;
 
-public class NIO_CLIENT_1 {
+public class NIO_CLIENT_1 implements Closeable, Client_communication {
+    private String host;
+    private int port;
+     private SocketChannel socketChannel;
+    private  ObjectOutputStream out = null;
+   private   ObjectInputStream in = null;
 
-    private  boolean isConnected = false;
-    private SocketChannel socketChannel;
-    public static void main(String[] args) {
-             new NIO_CLIENT_1().sendObject();
-    }
+   private List<PlainText> list;
 
-    public SocketChannel createChannel(){
+    public NIO_CLIENT_1( String host, int port) {
+        this.host = host;
+        this.port = port;
         try {
-            SocketChannel socketChannel = SocketChannel.open();
+           socketChannel = SocketChannel.open();
 
-            SocketAddress address = new InetSocketAddress("localhost",8080);
+            SocketAddress address = new InetSocketAddress(host,port);
             socketChannel.connect(address);
-            System.out.println("Client is working in server.."+socketChannel.getRemoteAddress());
-            return socketChannel;
+            out = new ObjectOutputStream(socketChannel.socket().getOutputStream());
+            in = new ObjectInputStream(socketChannel.socket().getInputStream());
+            System.out.println("Клиент NIO соединился с сервером "+host+ " на порте "+port+ ".");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return  null;
+
     }
 
-    public void sendObject(){
 
-        while (!isConnected){
-            socketChannel = createChannel();
-            isConnected=true;
-            try {
-                ObjectOutputStream  out = new ObjectOutputStream(socketChannel.socket().getOutputStream());
-              //  String fileName = "clientFolder/123.text";
-              //  PlainText plainText= Converter.convertionFileToClass(fileName);
-              //  SerializationText.serialization(out,plainText);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    public void  sendObgect(List<PlainText> list) {
+        try {
+            SerializationText.serialization(out, list);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+
+    }
+
+    @Override
+    public List<PlainText> receiveObject() {
+
+        try {
+            list = (List<PlainText>) SerializationText.deSerialization(in);
+
+                    return list;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+
     }
 
 
+    @Override
+    public void close() throws IOException {
+        out.close();
+        in.close();
+        socketChannel.close();
+    }
 }

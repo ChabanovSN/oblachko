@@ -2,9 +2,14 @@ package ru.chabanov;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.NodeOrientation;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
@@ -12,23 +17,25 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import ru.chabanov.io_client.IO_Client;
+import ru.chabanov.nio_client.NIO_CLIENT_1;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Client_FX extends Application
 {
-
-private static final String PATH_TO_MAIN_FOLDER= "C:\\Users\\User\\Desktop\\clientFolder";
-
+private static int number_of_client=1;
 
 
-    // Create the ListViews
-    ListView<PlainText> sourceView = new ListView<PlainText>();
-    ListView<PlainText> targetView = new ListView<PlainText>();
 
-    // Create the LoggingArea
-    TextArea loggingArea = new TextArea("");
+
+  private    TextField textField_path_to_main_folder = new TextField ();
+
+  private    ListView<PlainText> sourceView = new ListView<PlainText>();
+  private   ListView<PlainText> targetView = new ListView<PlainText>();
+
+
+   private TextArea loggingArea = new TextArea("");
 
     // Set the Custom Data Format
     static final DataFormat FILE_LIST = new DataFormat("PlainTextList");
@@ -36,47 +43,16 @@ private static final String PATH_TO_MAIN_FOLDER= "C:\\Users\\User\\Desktop\\clie
     public static void main(String[] args)
     {
         Application.launch(args);
+
+
     }
 
     @Override
     public void start(Stage stage)
     {
-        // Create the Labels
-        Label sourceListLbl = new Label("Клиент: ");
-        Label targetListLbl = new Label("Сервер: ");
-        Label messageLbl = new Label("Клиент-Сервер grag and drop  ");
-        Button showListFilesOnServer = new Button("Show list");
-        showListFilesOnServer.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-             PlainText commands = new PlainText(1);
 
-              new IO_Client().ascceptCommand(commands);
-            }
-        });
+              createWindow(stage);
 
-        // Set the Size of the Views and the LoggingArea
-        sourceView.setPrefSize(200, 200);
-        targetView.setPrefSize(200, 200);
-        loggingArea.setMaxSize(410, 200);
-
-        // Add the fruits to the Source List
-        sourceView.getItems().addAll(this.getFileList());
-
-        // Allow multiple-selection in lists
-        sourceView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        targetView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-
-        // Create the GridPane
-        GridPane pane = new GridPane();
-        pane.setHgap(10);
-        pane.setVgap(10);
-
-        // Add the Labels and Views to the Pane
-        pane.add(messageLbl, 0, 0, 3, 1);
-        pane.addRow(1, sourceListLbl, targetListLbl);
-        pane.addRow(2, sourceView, targetView);
-        pane.add(showListFilesOnServer,0,3,3,1);
         // Add mouse event handlers for the source
         sourceView.setOnDragDetected(new EventHandler <MouseEvent>()
         {
@@ -90,7 +66,7 @@ private static final String PATH_TO_MAIN_FOLDER= "C:\\Users\\User\\Desktop\\clie
         {
             public void handle(DragEvent event)
             {
-                dragOver(event, sourceView);
+               dragOver(event, sourceView);
             }
         });
 
@@ -98,9 +74,9 @@ private static final String PATH_TO_MAIN_FOLDER= "C:\\Users\\User\\Desktop\\clie
         {
             public void handle(DragEvent event)
             {
-                writelog("Файл на клиенте");
-                dragDropped(event, sourceView);
-            //    io_client.sendIO_Client(sourceView.getItems());
+
+               dragDropped(event, sourceView);
+
             }
         });
 
@@ -108,7 +84,18 @@ private static final String PATH_TO_MAIN_FOLDER= "C:\\Users\\User\\Desktop\\clie
         {
             public void handle(DragEvent event)
             {
-                  dragDone(event, sourceView);
+                Dragboard dragboard = event.getDragboard();
+                ArrayList<PlainText> list = (ArrayList<PlainText>)dragboard.getContent(FILE_LIST);
+
+                        Client_communication client = new Chose_option_client(number_of_client).client();
+                    if(client !=null){
+                        list.add(new PlainText(COMMAND.SEND_TO_SERVER));
+                        client.sendObgect(list);
+                        dragDone(event, sourceView);
+                        writeInfo(list," на сервере");
+                    }
+                    else writelog("Клиет null");
+
 
             }
         });
@@ -134,8 +121,7 @@ private static final String PATH_TO_MAIN_FOLDER= "C:\\Users\\User\\Desktop\\clie
         {
             public void handle(DragEvent event)
             {
-                writelog("Файл на сервере");
-            //    new IO_Client().sendIO_Client(targetView.getItems());
+
                 dragDropped(event, targetView);
 
             }
@@ -145,15 +131,103 @@ private static final String PATH_TO_MAIN_FOLDER= "C:\\Users\\User\\Desktop\\clie
         {
             public void handle(DragEvent event)
             {
-                 dragDone(event, targetView);
+
+                Dragboard dragboard = event.getDragboard();
+             List<PlainText>  list = (List<PlainText>)dragboard.getContent(FILE_LIST);
+             Client_communication client = new Chose_option_client(number_of_client).client();
+                if(client !=null){
+                    list.add(new PlainText(COMMAND.SEND_TO_CLIENT));
+                    client.sendObgect(list);
+                    list.clear();
+                   list = client.receiveObject();
+                   Converter.convertionClassToFile(list,textField_path_to_main_folder.getText()+"\\");
+                   writeInfo(list," на клиенте");
+                    dragDone(event, targetView);
+                }
+                else writelog("Клиет null");
+
             }
         });
 
-        // Create the VBox
+
+    }
+
+    private void createWindow(Stage stage){
+//        Client_communication client = new NIO_CLIENT_1();
+
+        GridPane pane = new GridPane(); // Create the Labels
+
+        Label sourceListLbl = new Label("Клиент: ");
+        Label targetListLbl = new Label("Сервер: ");
+        Label messageLbl = new Label("Клиент-Сервер grag and drop  ");
+        Button showListFilesOnServer = new Button("Обновить");
+       /// кнопки выбора клиента///////////////////////////////////////////
+        ToggleGroup radioGroup = new ToggleGroup();
+        RadioButton radioButton1 = new RadioButton(" IO клиент");
+        RadioButton radioButton2 = new RadioButton(" NIO клиент");
+        RadioButton radioButton3 = new RadioButton(" Netty клиент");
+        radioButton1.setToggleGroup(radioGroup);
+        radioButton1.setSelected(true);
+        radioButton2.setToggleGroup(radioGroup);
+        radioButton3.setToggleGroup(radioGroup);
+        radioGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+            @Override
+            public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
+                if (radioGroup.getSelectedToggle() != null) {
+                    RadioButton selected = (RadioButton)newValue.getToggleGroup().getSelectedToggle();
+                    if(selected ==radioButton1) number_of_client=1;
+                    if(selected ==radioButton2) number_of_client=2;
+                    if(selected ==radioButton3) number_of_client=3;
+                }
+            }
+        });
+
+
+
+        VBox ragioVGrop = new VBox();
+        ragioVGrop.getChildren().addAll(radioButton1,radioButton2,radioButton3);
+//////////////////////////////////////////////////////////////////////////////////////
+/// создание корневой папки..
+
+        Label labeNamePath = new Label("Укажите путь к месту хранения файлов на клиенте");
+        VBox createPathGroup = new VBox();
+
+        textField_path_to_main_folder.setText("C:\\Users\\User\\Desktop\\clientFolder");
+        createPathGroup.getChildren().addAll(labeNamePath, textField_path_to_main_folder);
+        createPathGroup.setSpacing(10);
+//////////////////////////////////////////////////////
+        sourceView.setPrefSize(200, 200);
+        targetView.setPrefSize(200, 200);
+        loggingArea.setPrefSize(400, 200);
+////// обновить вьюшки
+        sourceView.getItems().addAll(this.getFileListClient());
+        targetView.getItems().addAll(this.getFileListServer());
+
+
+        // множественный выбор
+        sourceView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        targetView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        showListFilesOnServer.setOnMouseClicked(event -> {
+            targetView.setItems(this.getFileListServer());
+            sourceView.setItems(this.getFileListClient());
+
+        });
+
+        pane.setHgap(10);
+        pane.setVgap(10);
+
+
+        pane.add(messageLbl, 0, 0, 3, 1);
+        pane.add(createPathGroup,0,1,3,1);
+       pane.addRow(3, sourceListLbl, targetListLbl);
+        pane.addRow(4, sourceView, targetView,ragioVGrop);
+        pane.add(showListFilesOnServer,0,5,3,1);
+
+
         VBox root = new VBox();
-        // Add the Pane and The LoggingArea to the VBox
+
         root.getChildren().addAll(pane,loggingArea);
-        // Set the Style of the VBox
+
         root.setStyle("-fx-padding: 10;" +
                 "-fx-border-style: solid inside;" +
                 "-fx-border-width: 2;" +
@@ -161,23 +235,39 @@ private static final String PATH_TO_MAIN_FOLDER= "C:\\Users\\User\\Desktop\\clie
                 "-fx-border-radius: 5;" +
                 "-fx-border-color: blue;");
 
-        // Create the Scene
+
         Scene scene = new Scene(root);
-        // Add the Scene to the Stage
         stage.setScene(scene);
-        // Set the Title
         stage.setTitle("Клиент серверное приложение ");
-        // Display the Stage
-        stage.show();
+         stage.show();
     }
 
 
-    private ObservableList<PlainText> getFileList()
+
+    private ObservableList<PlainText> getFileListClient()
     {
         ObservableList<PlainText> list = FXCollections.<PlainText>observableArrayList();
-list.addAll(Converter.getPlainTextList(PATH_TO_MAIN_FOLDER));
+list.addAll(Converter.getPlainTextList(textField_path_to_main_folder.getText()));
          return list;
     }
+
+
+
+    private ObservableList<PlainText> getFileListServer()
+{
+    ObservableList<PlainText> list = FXCollections.<PlainText>observableArrayList();
+    List<PlainText> list3 = new ArrayList<>();
+      list3.add(new PlainText(COMMAND.SHOW_ON_SERVER));
+    Client_communication client = new Chose_option_client(number_of_client).client();
+    client.sendObgect(list3);
+    list3.clear();
+    list3 =client.receiveObject();
+//    for(PlainText pt: list3){
+//        if(pt.getCommands() !=null)list3.remove(pt);
+//    }
+    list.addAll(list3);
+    return list;
+}
 
     private void dragDetected(MouseEvent event, ListView<PlainText> listView)
     {
@@ -240,17 +330,15 @@ list.addAll(Converter.getPlainTextList(PATH_TO_MAIN_FOLDER));
 
     private void dragDone(DragEvent event, ListView<PlainText> listView)
     {
+        targetView.setItems(this.getFileListServer());
+        sourceView.setItems(this.getFileListClient());
 
-        Dragboard dragboard = event.getDragboard();
-        if(dragboard.hasContent(FILE_LIST)){
-            ArrayList<PlainText> list = (ArrayList<PlainText>)dragboard.getContent(FILE_LIST);
-            new IO_Client().sendIO_Client(list);
-        }
+
         TransferMode tm = event.getTransferMode();
 
-        if (tm == TransferMode.MOVE)
+        if (tm == TransferMode.COPY)
         {
-            removeSelectedFiles(listView);
+         //   removeSelectedFiles(listView);
         }
 
         event.consume();
@@ -280,7 +368,12 @@ list.addAll(Converter.getPlainTextList(PATH_TO_MAIN_FOLDER));
         listView.getItems().removeAll(selectedList);
     }
 
-    // Helper Method for Logging
+    private void writeInfo(List<PlainText> list, String str){
+        for(PlainText pt : list) {
+            if (pt.getNameFile() != null)
+                writelog("Файл "+pt.getNameFile()+str);
+        }
+    }
     private void writelog(String text)
     {
         this.loggingArea.appendText(text + "\n");

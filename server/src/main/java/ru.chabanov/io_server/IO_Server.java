@@ -1,92 +1,65 @@
 package ru.chabanov.io_server;
 
+import ru.chabanov.COMMAND;
 import ru.chabanov.Converter;
 import ru.chabanov.PlainText;
 import ru.chabanov.SerializationText;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 public class IO_Server extends Thread {
-    public static final int PORT_NUMBER = 8080;
-    private static  final  String PATH_TO_MAIN_FOLDER = "C:\\Users\\User\\Desktop\\serverFolder\\";
-    protected Socket socket;
+   private  int PORT_NUMBER;
+    private   String PATH_TO_MAIN_FOLDER;
+    private ServerSocket serverSocket;
 
-    private IO_Server(Socket socket) {
-        this.socket = socket;
-        System.out.println("New client connected from " + socket.getInetAddress().getHostAddress());
-        start();
+
+    public IO_Server(String path, int port) {
+        this.PATH_TO_MAIN_FOLDER = path;
+        this.PORT_NUMBER = port;
+        try {
+            serverSocket = new ServerSocket(PORT_NUMBER);
+            this.start();
+            System.out.println("IO_Server start");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
-    public void run() {
-        ObjectInputStream  in = null;
-        ObjectOutputStream out = null;
+   public void run() {
+
         try {
-            in = new ObjectInputStream(socket.getInputStream());
-            out = new ObjectOutputStream(socket.getOutputStream());
 
 
-           PlainText newPlainText;
-            try {
+            while (true) {
+                Socket   client = serverSocket.accept();
+                ObjectInputStream    in = new ObjectInputStream(client.getInputStream());
+                ObjectOutputStream     out = new ObjectOutputStream(client.getOutputStream());
+                System.out.println("Новый клиент присоединился. Адресс:  "+client.getRemoteSocketAddress());
 
-                    newPlainText = (PlainText) SerializationText.deSerialization(in);
-                    System.out.println("Receive " + newPlainText.toString());
-                    if(newPlainText.getNameFile() !=null || newPlainText.getContent() !=null)
-                    Converter.convertionClassToFile(newPlainText, PATH_TO_MAIN_FOLDER);
+                try {
+                    List<PlainText> list = (List<PlainText>) SerializationText.deSerialization(in);
+                    Converter.doingCommands(list, PATH_TO_MAIN_FOLDER,out);
 
-                if(newPlainText.getCommands()==1)
-                    Converter.doingCommands(newPlainText,PATH_TO_MAIN_FOLDER);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                          in.close();
+                          out.close();
+                          client.close();
+                } catch (ClassNotFoundException e) {
+                    in.close();
+                    out.close();
+                    client.close();
+                    e.printStackTrace();
+
+                }
             }
-
-
-        //    PlainText plainText= Converter.convertionFileToClass(fileName);
-        //    SerializationText.serialization(out,plainText);
-
-            // режим чата
-//            BufferedReader br = new BufferedReader(new InputStreamReader(in));
-//            String request;
-//            while ((request = br.readLine()) != null) {
-//                System.out.println("Message received:" + request);
-//                request += '\n';
-//                out.write(request.getBytes());
-//            }
-
         } catch (IOException ex) {
             System.out.println("Unable to get streams from client");
-        } finally {
-            try {
-                in.close();
-                out.close();
-                socket.close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println("IO_Server Example");
-        ServerSocket server = null;
-        try {
-            server = new ServerSocket(PORT_NUMBER);
-            while (true) {
-                /**
-                 * create a new {@link IO_Server} object for each connection
-                 * this will allow multiple client connections
-                 */
-                new IO_Server(server.accept());
-            }
-        } catch (IOException ex) {
-            System.out.println("Unable to start server.");
-        } finally {
-            try {
-                if (server != null)
-                    server.close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
+
 }

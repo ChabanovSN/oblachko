@@ -5,9 +5,9 @@ import java.io.Serializable;
 public class PlainText implements Serializable {
     private String nameFile;
     private String content;
-    private int commands;
+    private COMMAND commands;
 
-    public PlainText(int commands) {
+    public PlainText(COMMAND commands) {
         this.commands = commands;
     }
 
@@ -38,11 +38,11 @@ public class PlainText implements Serializable {
         return  nameFile;
     }
 
-    public int getCommands() {
+    public COMMAND getCommands() {
         return commands;
     }
 
-    public void setCommands(int commands) {
+    public void setCommands(COMMAND commands) {
         this.commands = commands;
     }
 }
