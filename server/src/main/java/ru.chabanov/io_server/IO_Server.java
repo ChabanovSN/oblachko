@@ -42,7 +42,7 @@ public class IO_Server extends Thread {
 
                 try {
                     List<PlainText> list = (List<PlainText>) SerializationText.deSerialization(in);
-                    Converter.doingCommands(list, PATH_TO_MAIN_FOLDER,out);
+                    Converter.doingCommands(list, PATH_TO_MAIN_FOLDER,out,null);
 
                           in.close();
                           out.close();

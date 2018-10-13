@@ -1,5 +1,7 @@
 package ru.chabanov;
 
+import io.netty.channel.ChannelHandlerContext;
+
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -85,7 +87,7 @@ public class Converter {
         return new PlainText(fileName.getName(), sb.toString());
     }
 
-    public static void doingCommands(List<PlainText> files, String path, ObjectOutputStream stream) {
+    public static void doingCommands(List<PlainText> files, String path, OutputStream stream, ChannelHandlerContext ctx) {
 for(PlainText pt : files){
     if(pt.getCommands() !=null) {
         try {
@@ -95,11 +97,12 @@ for(PlainText pt : files){
                     Converter.convertionClassToFile(files, path);
                     break;
                 case SHOW_ON_SERVER:
+                    if(ctx !=null)ctx.writeAndFlush(getPlainTextList(path));
                     SerializationText.serialization(stream, getPlainTextList(path));
                     break;
 
                 case SEND_TO_CLIENT:
-               //     Converter.convertionClassToFile(files,path);
+                    if(ctx !=null)ctx.writeAndFlush(files);
                     SerializationText.serialization(stream, files);
                     break;
                 default:

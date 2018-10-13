@@ -10,7 +10,9 @@ public class PlainText implements Serializable {
     public PlainText(COMMAND commands) {
         this.commands = commands;
     }
+    public PlainText() {
 
+    }
     public PlainText(String nameFile, String content) {
         this.nameFile = nameFile;
         this.content = content;
