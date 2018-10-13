@@ -30,18 +30,25 @@ this.port=port;
         System.out.println("Клиент IO соединился с сервером "+host+ " на порте "+port+ ".");
         try {
             socket = new Socket(host, port);
+           Integer i = new Integer(13);
+            System.out.println(i.byteValue());
+           byte check = i.byteValue();
+            oeos = new DataOutputStream(socket.getOutputStream());
+            oeos.write(check);
+            oeos.flush();
+          //  SerializationText.serialization(oeos,check);
+            odis = new DataInputStream(socket.getInputStream());
 
-            String check = "checking";
-            oeos = new ObjectOutputStream(socket.getOutputStream());
-            SerializationText.serialization(oeos,check);
-            odis = new ObjectInputStream(socket.getInputStream());
-
-            String ch = (String) SerializationText.deSerialization(odis);
-
-            if(ch.equals(check)) {
+            byte checkBack = (byte) odis.read();
+            System.out.println(checkBack+"chackBack");
+            if(check ==checkBack) {
                 oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
                 odis = new ObjectDecoderInputStream(socket.getInputStream());
-              }
+              }else {
+                oeos = new ObjectOutputStream(socket.getOutputStream());
+                odis = new ObjectInputStream(socket.getInputStream());
+            }
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -51,10 +58,17 @@ this.port=port;
 
     public void  sendObgect(List<PlainText> list) {
 
-        System.out.println("send list");
-        for(PlainText pt : list) System.out.println(pt + " comm "+pt.getCommands());
+
         try {
-            if (list != null) SerializationText.serialization(oeos, list);
+            if (list != null){
+                System.out.println("sendObgect");
+                for(PlainText pt : list){
+                    if(pt.getCommands() !=null)
+                        System.out.println(" on io client "+pt.getCommands());
+                }
+
+                SerializationText.serialization(oeos, list);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -67,8 +81,10 @@ this.port=port;
             try {
                 list = (List<PlainText>) SerializationText.deSerialization(odis);
 
-                System.out.println("send list");
-                for(PlainText pt : list) System.out.println(pt + " comm "+pt.getCommands());
+
+                for(PlainText pt : list){
+                    System.out.println("receiveObject on io client"+ pt + " comm "+pt.getCommands());
+                }
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -87,5 +103,14 @@ this.port=port;
         odis.close();
       oeos.close();
         socket.close();
+    }
+
+    @Override
+    public void discard() {
+        try {
+            close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

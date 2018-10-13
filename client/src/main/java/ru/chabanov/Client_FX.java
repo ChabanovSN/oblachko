@@ -200,16 +200,16 @@ private static int number_of_client=1;
         targetView.setPrefSize(200, 200);
         loggingArea.setPrefSize(400, 200);
 ////// обновить вьюшки
-        sourceView.getItems().addAll(this.getFileListClient());
-        targetView.getItems().addAll(this.getFileListServer());
+        sourceView.getItems().addAll(getFileListClient());
+        targetView.getItems().addAll(getFileListServer());
 
 
         // множественный выбор
         sourceView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         targetView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         showListFilesOnServer.setOnMouseClicked(event -> {
-            targetView.setItems(this.getFileListServer());
-            sourceView.setItems(this.getFileListClient());
+            targetView.setItems(getFileListServer());
+            sourceView.setItems(getFileListClient());
 
         });
 
@@ -256,16 +256,24 @@ list.addAll(Converter.getPlainTextList(textField_path_to_main_folder.getText()))
     private ObservableList<PlainText> getFileListServer()
 {
     ObservableList<PlainText> list = FXCollections.<PlainText>observableArrayList();
-    List<PlainText> list3 = new ArrayList<>();
-      list3.add(new PlainText(COMMAND.SHOW_ON_SERVER));
-    Client_communication client = new Chose_option_client(number_of_client).client();
-    client.sendObgect(list3);
-    list3.clear();
-    list3 =client.receiveObject();
+    try {
+        List<PlainText> list3 = new ArrayList<>();
+        list3.add(new PlainText(COMMAND.SHOW_ON_SERVER));
+        Client_communication client = new Chose_option_client(number_of_client).client();
+        client.sendObgect(list3);
+        list3.clear();
+        list3 = client.receiveObject();
 //    for(PlainText pt: list3){
 //        if(pt.getCommands() !=null)list3.remove(pt);
 //    }
-    list.addAll(list3);
+        list.addAll(list3);
+
+    }
+    catch (Exception e){
+
+        System.out.println("Error COMMAND.SHOW_ON_SERVER");
+        e.printStackTrace();
+    }
     return list;
 }
 
