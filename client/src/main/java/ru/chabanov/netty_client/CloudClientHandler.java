@@ -25,6 +25,7 @@ public class CloudClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        System.out.println("WTF!!!");
 
   /// вот здесь беда.. при условии что можно сосывывать объекты в хендлер как я с сделал в NettyClient
 
