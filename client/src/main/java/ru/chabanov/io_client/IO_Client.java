@@ -30,18 +30,17 @@ this.port=port;
         System.out.println("Клиент IO соединился с сервером "+host+ " на порте "+port+ ".");
         try {
             socket = new Socket(host, port);
-           Integer i = new Integer(13);
-            System.out.println(i.byteValue());
-           byte check = i.byteValue();
+
+
             oeos = new DataOutputStream(socket.getOutputStream());
+            byte check = 13;
             oeos.write(check);
             oeos.flush();
-          //  SerializationText.serialization(oeos,check);
+
             odis = new DataInputStream(socket.getInputStream());
 
             byte checkBack = (byte) odis.read();
-            System.out.println(checkBack+"chackBack");
-            if(check ==checkBack) {
+              if(check ==checkBack) {
                 oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
                 odis = new ObjectDecoderInputStream(socket.getInputStream());
               }else {

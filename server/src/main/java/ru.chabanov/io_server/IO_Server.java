@@ -36,8 +36,20 @@ public class IO_Server extends Thread {
 
             while (true) {
                 Socket   client = serverSocket.accept();
-                ObjectInputStream    in = new ObjectInputStream(client.getInputStream());
-                ObjectOutputStream     out = new ObjectOutputStream(client.getOutputStream());
+
+              InputStream    in =null;
+               OutputStream out = null;
+
+                                   in = new DataInputStream(client.getInputStream());
+                                   out = new DataOutputStream(client.getOutputStream());
+                                   byte b = (byte) in.read();
+                                   if(b==13){
+                                       out.write(14);
+                                       out.flush();
+                                   }
+
+                        in  = new ObjectInputStream(client.getInputStream());
+                       out = new ObjectOutputStream(client.getOutputStream());
                 System.out.println("Новый клиент присоединился. Адресс:  "+client.getRemoteSocketAddress());
 
                 try {

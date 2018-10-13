@@ -28,7 +28,7 @@ public class NettyServer {
         }
     }
 
-    public void run() throws Exception {
+    private void run() throws Exception {
         EventLoopGroup mainGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {

@@ -38,7 +38,7 @@ public class NIO_CLIENT_1 implements Closeable, Client_communication {
 
 
             byte checkBack = (byte) in.read();
-            System.out.println(checkBack+"checkBack");
+
             if(check ==checkBack) {
                 out = new ObjectEncoderOutputStream(socketChannel.socket().getOutputStream());
                 in = new ObjectDecoderInputStream(socketChannel.socket().getInputStream());
@@ -51,10 +51,7 @@ public class NIO_CLIENT_1 implements Closeable, Client_communication {
 
             System.out.println("Клиент NIO соединился с сервером "+host+ " на порте "+port+ ".");
         }
-//        catch (ClassNotFoundException e){
-//            System.out.println("ClassNotFoundException in NIO CLIENT");
-//            e.printStackTrace();
-//        }
+
         catch (IOException e) {
             e.printStackTrace();
         }

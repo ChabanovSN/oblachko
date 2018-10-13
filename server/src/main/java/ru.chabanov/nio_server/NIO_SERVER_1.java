@@ -5,9 +5,7 @@ import ru.chabanov.Converter;
 import ru.chabanov.PlainText;
 import ru.chabanov.SerializationText;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
@@ -40,8 +38,21 @@ public class NIO_SERVER_1 {
 
             while (true) {
                 SocketChannel sChannel = ssChannel.accept();
-                ObjectInputStream in = new ObjectInputStream(sChannel.socket().getInputStream());
-                ObjectOutputStream out = new ObjectOutputStream(sChannel.socket().getOutputStream());
+              InputStream in = null;
+               OutputStream out = null;
+
+                in = new DataInputStream(sChannel.socket().getInputStream());
+                out = new DataOutputStream(sChannel.socket().getOutputStream());
+                byte b = (byte) in.read();
+                if(b==13){
+                    out.write(14);
+                    out.flush();
+                }
+
+
+
+                in = new ObjectInputStream(sChannel.socket().getInputStream());
+                out = new ObjectOutputStream(sChannel.socket().getOutputStream());
                 try {
                     List<PlainText> list = (List<PlainText>) SerializationText.deSerialization(in);
                     Converter.doingCommands(list, PATH_TO_MAIN_FOLDER, out,null);
