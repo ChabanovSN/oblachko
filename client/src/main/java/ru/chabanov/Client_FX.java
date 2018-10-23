@@ -1,43 +1,42 @@
 package ru.chabanov;
 
+
+
+import ru.chabanov.io_client.IO_Client;
+import ru.chabanov.nio_client.NIO_CLIENT_1;
+
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.NodeOrientation;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import ru.chabanov.io_client.IO_Client;
-import ru.chabanov.nio_client.NIO_CLIENT_1;
-
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class Client_FX extends Application
 {
-private static int number_of_client=1;
+private  int number_of_client=1;
 
 
 
 
-  private    TextField textField_path_to_main_folder = new TextField ();
+  private TextField textField_path_to_main_folder = new TextField ();
 
-  private    ListView<PlainText> sourceView = new ListView<PlainText>();
+  private ListView<PlainText> sourceView = new ListView<PlainText>();
   private   ListView<PlainText> targetView = new ListView<PlainText>();
 
 
    private TextArea loggingArea = new TextArea("");
+   private boolean isNatty=false;
 
-    // Set the Custom Data Format
     static final DataFormat FILE_LIST = new DataFormat("PlainTextList");
 
     public static void main(String[] args)
@@ -54,7 +53,7 @@ private static int number_of_client=1;
               createWindow(stage);
 
         // Add mouse event handlers for the source
-        sourceView.setOnDragDetected(new EventHandler <MouseEvent>()
+        sourceView.setOnDragDetected(new EventHandler<MouseEvent>()
         {
             public void handle(MouseEvent event)
             {
@@ -88,6 +87,7 @@ private static int number_of_client=1;
                 ArrayList<PlainText> list = (ArrayList<PlainText>)dragboard.getContent(FILE_LIST);
 
                         Client_communication client = new Chose_option_client(number_of_client).client();
+                isNatty=client.isNetty();
                     if(client !=null){
                         list.add(new PlainText(COMMAND.SEND_TO_SERVER));
                         client.sendObgect(list);
@@ -95,8 +95,8 @@ private static int number_of_client=1;
                         writeInfo(list," на сервере");
                     }
                     else writelog("Клиет null");
-
-
+                sourceView.setItems(getFileListClient());
+                targetView.setItems(getFileListServer());
             }
         });
 
@@ -105,14 +105,18 @@ private static int number_of_client=1;
         {
             public void handle(MouseEvent event)
             {
+
                dragDetected(event, targetView);
             }
         });
 
         targetView.setOnDragOver(new EventHandler <DragEvent>()
         {
+
             public void handle(DragEvent event)
             {
+
+
                 dragOver(event, targetView);
             }
         });
@@ -135,17 +139,19 @@ private static int number_of_client=1;
                 Dragboard dragboard = event.getDragboard();
              List<PlainText>  list = (List<PlainText>)dragboard.getContent(FILE_LIST);
              Client_communication client = new Chose_option_client(number_of_client).client();
+                isNatty=client.isNetty();
                 if(client !=null){
                     list.add(new PlainText(COMMAND.SEND_TO_CLIENT));
                     client.sendObgect(list);
                     list.clear();
                    list = client.receiveObject();
-                   Converter.convertionClassToFile(list,textField_path_to_main_folder.getText()+"\\");
+                  new Converter().convertionClassToFile(list,textField_path_to_main_folder.getText()+"\\");
                    writeInfo(list," на клиенте");
                     dragDone(event, targetView);
                 }
                 else writelog("Клиет null");
-
+                sourceView.setItems(getFileListClient());
+                targetView.setItems(getFileListServer());
             }
         });
 
@@ -153,30 +159,36 @@ private static int number_of_client=1;
     }
 
     private void createWindow(Stage stage){
-//        Client_communication client = new NIO_CLIENT_1();
+
 
         GridPane pane = new GridPane(); // Create the Labels
 
         Label sourceListLbl = new Label("Клиент: ");
         Label targetListLbl = new Label("Сервер: ");
-        Label messageLbl = new Label("Клиент-Сервер grag and drop  ");
+        Label messageLbl = new Label("Клиент-Сервер grag and drop \n(Можно работать со списком через Shift) ");
         Button showListFilesOnServer = new Button("Обновить");
+        Button deleteOnServer = new Button("Удалить на сервере");
+        Button deleteOnClient = new Button("Удалить на клиенте");
        /// кнопки выбора клиента///////////////////////////////////////////
         ToggleGroup radioGroup = new ToggleGroup();
         RadioButton radioButton1 = new RadioButton(" IO клиент");
         RadioButton radioButton2 = new RadioButton(" NIO клиент");
-        RadioButton radioButton3 = new RadioButton(" Netty клиент");
+        RadioButton radioButton3 = new RadioButton(" Netty клиент\nТолько для Netty\nСервера");
+
         radioButton1.setToggleGroup(radioGroup);
         radioButton1.setSelected(true);
         radioButton2.setToggleGroup(radioGroup);
         radioButton3.setToggleGroup(radioGroup);
+
         radioGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
             @Override
             public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
                 if (radioGroup.getSelectedToggle() != null) {
+                    radioButton3.setDisable(!isNatty);
                     RadioButton selected = (RadioButton)newValue.getToggleGroup().getSelectedToggle();
                     if(selected ==radioButton1) number_of_client=1;
                     if(selected ==radioButton2) number_of_client=2;
+                    if(isNatty)
                     if(selected ==radioButton3) number_of_client=3;
                 }
             }
@@ -192,7 +204,7 @@ private static int number_of_client=1;
         Label labeNamePath = new Label("Укажите путь к месту хранения файлов на клиенте");
         VBox createPathGroup = new VBox();
 
-        textField_path_to_main_folder.setText("C:\\Users\\User\\Desktop\\clientFolder");
+        textField_path_to_main_folder.setText("C:\\ClientFolder");
         createPathGroup.getChildren().addAll(labeNamePath, textField_path_to_main_folder);
         createPathGroup.setSpacing(10);
 //////////////////////////////////////////////////////
@@ -200,19 +212,50 @@ private static int number_of_client=1;
         targetView.setPrefSize(200, 200);
         loggingArea.setPrefSize(400, 200);
 ////// обновить вьюшки
-        sourceView.getItems().addAll(getFileListClient());
-        targetView.getItems().addAll(getFileListServer());
-
+        sourceView.setItems(getFileListClient());
+        targetView.setItems(getFileListServer());
 
         // множественный выбор
         sourceView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         targetView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
         showListFilesOnServer.setOnMouseClicked(event -> {
-            targetView.setItems(getFileListServer());
             sourceView.setItems(getFileListClient());
+            targetView.setItems(getFileListServer());
 
         });
 
+        deleteOnServer.setOnMouseClicked(event -> {
+           try {
+               Client_communication client = new Chose_option_client(number_of_client).client();
+               isNatty=client.isNetty();
+          List<PlainText> list = new ArrayList<>();
+for(PlainText pt :targetView.getSelectionModel().getSelectedItems()){
+   list.add(new PlainText(pt.getNameFile(),null));}
+               list.add(new PlainText(COMMAND.DELETE_ON_SERVER));
+               client.sendObgect(list);
+               writeInfo(list, " удален с сервера");
+
+           }catch (Exception e){
+               System.out.println("Ошибка при удалении файла на сервере");
+           }
+            targetView.setItems(getFileListServer());
+        });
+
+        deleteOnClient.setOnMouseClicked(event -> {
+            List<PlainText> list = new ArrayList<>();
+           try { for (PlainText pt : sourceView.getSelectionModel().getSelectedItems()) {
+                list.add(new PlainText(pt.getNameFile(), null));
+            }
+            list.add(new PlainText(COMMAND.DELETE_ON_CLIENT));
+            new Converter().doingCommands(list, textField_path_to_main_folder.getText(), null, null);
+            writeInfo(list, " удален на клиенте");
+
+        }catch (Exception e){
+            System.out.println("Ошибка при удалении файла на сервере");
+        }
+        sourceView.setItems(getFileListClient());
+        });
         pane.setHgap(10);
         pane.setVgap(10);
 
@@ -221,8 +264,10 @@ private static int number_of_client=1;
         pane.add(createPathGroup,0,1,3,1);
        pane.addRow(3, sourceListLbl, targetListLbl);
         pane.addRow(4, sourceView, targetView,ragioVGrop);
-        pane.add(showListFilesOnServer,0,5,3,1);
 
+        pane.add(deleteOnClient,0,5,3,1);
+        pane.add(showListFilesOnServer,1,5,3,1);
+        pane.add(deleteOnServer,2,5,3,1);
 
         VBox root = new VBox();
 
@@ -247,7 +292,7 @@ private static int number_of_client=1;
     private ObservableList<PlainText> getFileListClient()
     {
         ObservableList<PlainText> list = FXCollections.<PlainText>observableArrayList();
-list.addAll(Converter.getPlainTextList(textField_path_to_main_folder.getText()));
+list.addAll(new Converter().getPlainTextList(textField_path_to_main_folder.getText()));
          return list;
     }
 
@@ -258,8 +303,9 @@ list.addAll(Converter.getPlainTextList(textField_path_to_main_folder.getText()))
     ObservableList<PlainText> list = FXCollections.<PlainText>observableArrayList();
     try {
         List<PlainText> list3 = new ArrayList<>();
-        list3.add(new PlainText(COMMAND.SHOW_ON_SERVER));
+        list3.add(new PlainText(COMMAND.SHOW_ON_SERVER_ONLY_NAME));
         Client_communication client = new Chose_option_client(number_of_client).client();
+        isNatty=client.isNetty();
         client.sendObgect(list3);
         list3.clear();
         list3 = client.receiveObject();
@@ -272,7 +318,7 @@ list.addAll(Converter.getPlainTextList(textField_path_to_main_folder.getText()))
     catch (Exception e){
 
         System.out.println("Error COMMAND.SHOW_ON_SERVER");
-        e.printStackTrace();
+
     }
     return list;
 }

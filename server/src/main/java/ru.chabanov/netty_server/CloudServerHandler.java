@@ -1,12 +1,14 @@
 package ru.chabanov.netty_server;
 
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
 import ru.chabanov.Converter;
 import ru.chabanov.PlainText;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CloudServerHandler extends ChannelInboundHandlerAdapter {
@@ -18,45 +20,40 @@ public class CloudServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("Client connected...");
+        System.out.println("Client connected..." + ctx.channel().remoteAddress());
 
-
-
-
-
-        // Send greeting for a new connection.
-        // ctx.write("Welcome to " + InetAddress.getLocalHost().getHostName() + "!\r\n");
-        // ctx.write("It is " + new Date() + " now.\r\n");
-        // ctx.flush();
-    }
+         }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 ++step;
+
         System.out.println("WORKING step "+step);
+        List<PlainText> list = null;
         try {
             if (msg != null){
-                List<PlainText> list = (List<PlainText>) msg;
-             //   ((List<PlainText>) msg).clear();
-                 for(PlainText pt : list){
-                     if(pt.getCommands() !=null)
-                     System.out.println(" On server "+pt.getCommands());
-                 }
+                try {
+                     list = (List<PlainText>) msg;
+                                       for (PlainText pt : list) {
+                       // if (pt.getCommands() != null)
+                            System.out.println(" On server " + pt.getCommands() + " name " + pt);
+                    }
+                }catch (ClassCastException e){
+                    System.out.println("ClassCastException" +msg.toString());
+                }
 
               //  ReferenceCountUtil.release(msg);
-                Converter.doingCommands(list,PATH_TO_MAIN_FOLDER,null,ctx);
-//
-//                 list.clear();
-//                 list.add(new PlainText("netty1.txt",null));
-//                list.add(new PlainText("netty2.txt",null));
-//                list.add(new PlainText("netty3.txt",null));
-              //  ctx.write(msg);
+                if(list !=null) {
+                   new Converter().doingCommands(list, PATH_TO_MAIN_FOLDER, null, ctx);
+
+                }
             } else {
                 System.out.printf("Server received wrong object!");
                 return;
             }
         } finally {
-            ReferenceCountUtil.release(msg);
+          ReferenceCountUtil.release(msg);
+
         }
     }
 
@@ -67,7 +64,10 @@ public class CloudServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
+        System.out.println(" ошибка на сервере");
+
+
+       // cause.printStackTrace();
         //ctx.flush();
      //   ctx.close();
     }

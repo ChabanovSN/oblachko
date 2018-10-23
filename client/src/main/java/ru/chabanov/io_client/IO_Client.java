@@ -6,6 +6,7 @@ import ru.chabanov.PlainText;
 import ru.chabanov.SerializationText;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -17,56 +18,41 @@ public class IO_Client implements Closeable, Client_communication {
     Socket socket = null;
     OutputStream oeos = null;
     InputStream  odis = null;
+    private boolean isNatty;
 
-//    public static void main(String[] args) {
-//        new IO_Client("localhost",8088);
-//    }
-
-    public IO_Client(String host,int port) {
-this.host=host;
-this.port=port;
+    public IO_Client(String host, int port) {
+        this.host = host;
+        this.port = port;
 
 
-        System.out.println("Клиент IO соединился с сервером "+host+ " на порте "+port+ ".");
         try {
-            socket = new Socket(host, port);
+            try {
+                socket = new Socket(host, port + 1);
 
-
-            oeos = new DataOutputStream(socket.getOutputStream());
-            byte check = 13;
-            oeos.write(check);
-            oeos.flush();
-
-            odis = new DataInputStream(socket.getInputStream());
-
-            byte checkBack = (byte) odis.read();
-              if(check ==checkBack) {
                 oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
                 odis = new ObjectDecoderInputStream(socket.getInputStream());
-              }else {
+                isNatty=true;
+                System.out.println("Клиент IO соединился с сервером Netty  host: " + host + " на порте: " + (port+1) + ".");
+            } catch (ConnectException e) {
+                System.out.println("Это не Нетти");
+            }
+            if (socket == null) {
+                socket = new Socket(host, port);
                 oeos = new ObjectOutputStream(socket.getOutputStream());
                 odis = new ObjectInputStream(socket.getInputStream());
+                isNatty=false;
+                System.out.println("Клиент IO соединился с сервером  IO or NIO host: " + host + " на порте: " + port + ".");
             }
-
-
         } catch (Exception e) {
-            e.printStackTrace();
-
+            System.out.println(" Error in IO Client");
         }
+
     }
 
     public void  sendObgect(List<PlainText> list) {
-
-
         try {
             if (list != null){
-                System.out.println("sendObgect");
-                for(PlainText pt : list){
-                    if(pt.getCommands() !=null)
-                        System.out.println(" on io client "+pt.getCommands());
-                }
-
-                SerializationText.serialization(oeos, list);
+               SerializationText.serialization(oeos, list);
             }
 
         } catch (Exception e) {
@@ -76,19 +62,13 @@ this.port=port;
 
     public List<PlainText> receiveObject() {
         List<PlainText> list = null;
+
         try {
-            try {
-                list = (List<PlainText>) SerializationText.deSerialization(odis);
+            list = (List<PlainText>) SerializationText.deSerialization(odis);
 
+        } catch (Exception e) {
+            System.out.println("Ошибка в receiveObject() Client IO ");
 
-                for(PlainText pt : list){
-                    System.out.println("receiveObject on io client"+ pt + " comm "+pt.getCommands());
-                }
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return list;
 
@@ -111,5 +91,10 @@ this.port=port;
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public boolean isNetty() {
+        return isNatty;
     }
 }

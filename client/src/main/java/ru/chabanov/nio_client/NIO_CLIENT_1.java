@@ -8,9 +8,11 @@ import ru.chabanov.PlainText;
 import ru.chabanov.SerializationText;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.List;
 
 public class NIO_CLIENT_1 implements Closeable, Client_communication {
@@ -19,41 +21,44 @@ public class NIO_CLIENT_1 implements Closeable, Client_communication {
      private SocketChannel socketChannel;
     private OutputStream out = null;
    private   InputStream in = null;
-
+private boolean isNatty;
    private List<PlainText> list;
 
     public NIO_CLIENT_1( String host, int port) {
         this.host = host;
         this.port = port;
         try {
-           socketChannel = SocketChannel.open();
-            SocketAddress address = new InetSocketAddress(host,port);
-            socketChannel.connect(address);
 
-            byte check = 13;
-            out = new DataOutputStream(socketChannel.socket().getOutputStream());
-            out.write(check);
-            out.flush();
-            in = new DataInputStream(socketChannel.socket().getInputStream());
-
-
-            byte checkBack = (byte) in.read();
-
-            if(check ==checkBack) {
-                out = new ObjectEncoderOutputStream(socketChannel.socket().getOutputStream());
-                in = new ObjectDecoderInputStream(socketChannel.socket().getInputStream());
-
-            }else{
-                out = new ObjectOutputStream(socketChannel.socket().getOutputStream());
-                in = new ObjectInputStream(socketChannel.socket().getInputStream());
+            try {
+                socketChannel = SocketChannel.open();
+                SocketAddress address = new InetSocketAddress(host, port + 1);
+                socketChannel.connect(address);
+                if (socketChannel.socket().isConnected()) {
+                    out = new ObjectEncoderOutputStream(socketChannel.socket().getOutputStream());
+                    in = new ObjectDecoderInputStream(socketChannel.socket().getInputStream());
+                   isNatty=true;
+                    System.out.println("Клиент NIO соединился с сервером Netty  host: " + host + " на порте: " + (port + 1) + ".");
+                }
+            } catch (ConnectException e) {
+                System.out.println("Это не Нетти");
+                socketChannel = SocketChannel.open();
+            }
+            if (!socketChannel.socket().isConnected()) {
+            SocketAddress address = new InetSocketAddress(host, port);
+                socketChannel.connect(address);
+                if (socketChannel.socket().isConnected()) {
+                    out = new ObjectOutputStream(socketChannel.socket().getOutputStream());
+                    in = new ObjectInputStream(socketChannel.socket().getInputStream());
+                    isNatty=false;
+                    System.out.println("Клиент NIO соединился с сервером  IO or NIO host: " + host + " на порте: " + port + ".");
+                }
             }
 
 
-            System.out.println("Клиент NIO соединился с сервером "+host+ " на порте "+port+ ".");
         }
 
-        catch (IOException e) {
-            e.printStackTrace();
+        catch (Exception e) {
+            System.out.println(" сервер не Нетти");
         }
 
     }
@@ -61,12 +66,7 @@ public class NIO_CLIENT_1 implements Closeable, Client_communication {
 
     public void  sendObgect(List<PlainText> list) {
         try {
-            System.out.println("sendObgect");
-            for(PlainText pr : list) {
-                if(pr.getCommands() !=null)
-                System.out.println(" on nio client "+pr.getCommands());
-            }
-            SerializationText.serialization(out, list);
+             SerializationText.serialization(out, list);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -78,19 +78,13 @@ public class NIO_CLIENT_1 implements Closeable, Client_communication {
     public List<PlainText> receiveObject() {
 
         try {
+
             list = (List<PlainText>) SerializationText.deSerialization(in);
 
-            for(PlainText pt : list){
+            return list;
 
-                System.out.println("receiveObject on NIO client"+ pt + " comm "+pt.getCommands());
-            }
-
-                    return list;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Error in NIO Client receiveObject() ");
         }
         return null;
 
@@ -112,4 +106,18 @@ public class NIO_CLIENT_1 implements Closeable, Client_communication {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public boolean isNetty() {
+        return isNatty;
+    }
+
+//    public static void main(String[] args) {
+//        NIO_CLIENT_1 client=   new NIO_CLIENT_1("localhost",8088);
+//        List<PlainText> list = new ArrayList<>();
+//        list.add(new PlainText("iNo_client.txt",null));
+//
+//        client.sendObgect(list);
+//        client.receiveObject();
+//    }
 }

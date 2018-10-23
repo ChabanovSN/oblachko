@@ -38,24 +38,12 @@ public class NIO_SERVER_1 {
 
             while (true) {
                 SocketChannel sChannel = ssChannel.accept();
-              InputStream in = null;
-               OutputStream out = null;
-
-                in = new DataInputStream(sChannel.socket().getInputStream());
-                out = new DataOutputStream(sChannel.socket().getOutputStream());
-                byte b = (byte) in.read();
-                if(b==13){
-                    out.write(14);
-                    out.flush();
-                }
-
-
-
-                in = new ObjectInputStream(sChannel.socket().getInputStream());
-                out = new ObjectOutputStream(sChannel.socket().getOutputStream());
+                InputStream in  = new ObjectInputStream(sChannel.socket().getInputStream());
+                OutputStream out  = new ObjectOutputStream(sChannel.socket().getOutputStream());
+                System.out.println("Новый клиент "+sChannel.getRemoteAddress());
                 try {
                     List<PlainText> list = (List<PlainText>) SerializationText.deSerialization(in);
-                    Converter.doingCommands(list, PATH_TO_MAIN_FOLDER, out,null);
+                  new  Converter().doingCommands(list, PATH_TO_MAIN_FOLDER, out,null);
                        in.close();
                        out.close();
                        sChannel.close();

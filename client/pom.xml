@@ -11,12 +11,14 @@
 
     <artifactId>client</artifactId>
 <dependencies>
-    <!-- https://mvnrepository.com/artifact/org.wildfly.swarm/javafx -->
+
+    <!-- https://mvnrepository.com/artifact/org.openjfx/javafx-base -->
     <dependency>
-        <groupId>org.wildfly.swarm</groupId>
-        <artifactId>javafx</artifactId>
-        <version>2018.5.0</version>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-base</artifactId>
+        <version>11</version>
     </dependency>
+
     <dependency>
         <groupId>ru.chabanov</groupId>
         <artifactId>common</artifactId>

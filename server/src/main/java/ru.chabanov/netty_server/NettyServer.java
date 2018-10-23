@@ -34,12 +34,11 @@ public class NettyServer {
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(mainGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    // .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                    .channel(NioServerSocketChannel.class);
+
+                   b.childHandler(new ChannelInitializer<SocketChannel>() {
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             socketChannel.pipeline().addLast(
-                                    new CheckingServer(),
                                     new ObjectDecoder(MAX_OBJ_SIZE, ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
                                     new CloudServerHandler(PATH_TO_MAIN_FOLDER)
@@ -49,9 +48,9 @@ public class NettyServer {
                     .option(ChannelOption.SO_BACKLOG, 128)
                  //   .option(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
-            System.out.println("Netty server working on port "+PORT_NUMBER);
+            System.out.println("Netty server working on port "+(PORT_NUMBER+1));
 
-            ChannelFuture future = b.bind(PORT_NUMBER).sync();
+            ChannelFuture future = b.bind(PORT_NUMBER+1).sync();
             future.channel().closeFuture().sync();
         } finally {
             mainGroup.shutdownGracefully();

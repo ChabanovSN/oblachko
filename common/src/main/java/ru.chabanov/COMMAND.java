@@ -1,8 +1,11 @@
 package ru.chabanov;
 
 public enum COMMAND {
-    DELETE,
+    DELETE_ON_SERVER,
+    DELETE_ON_CLIENT,
     SEND_TO_SERVER,
     SEND_TO_CLIENT,
-    SHOW_ON_SERVER;
+    SHOW_ON_SERVER,
+    SHOW_ON_SERVER_ONLY_NAME,
+    EMPTY_COMMAND;
 }

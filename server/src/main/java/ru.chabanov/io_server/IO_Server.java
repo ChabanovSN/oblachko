@@ -31,47 +31,48 @@ public class IO_Server extends Thread {
 
    public void run() {
 
-        try {
+
+       while (true) {
+           Socket client = null;
+           try {
+               client = serverSocket.accept();
+               Socket finalClient = client;
+               new Thread(new Runnable() {
+                   InputStream in = new ObjectInputStream(finalClient.getInputStream());
+                   OutputStream out = new ObjectOutputStream(finalClient.getOutputStream());
+                   @Override
+                   public void run() {
+                       System.out.println("Новый клиент присоединился. Адресс:  " + finalClient.getRemoteSocketAddress());
+                       try {
 
 
-            while (true) {
-                Socket   client = serverSocket.accept();
+                           try {
+                               List<PlainText> list = (List<PlainText>) SerializationText.deSerialization(in);
+                               new Converter().doingCommands(list, PATH_TO_MAIN_FOLDER, out, null);
 
-              InputStream    in =null;
-               OutputStream out = null;
+                               in.close();
+                               out.close();
+                               finalClient.close();
+                           } catch (ClassNotFoundException e) {
+                               in.close();
+                               out.close();
+                               finalClient.close();
+                               e.printStackTrace();
 
-                                   in = new DataInputStream(client.getInputStream());
-                                   out = new DataOutputStream(client.getOutputStream());
-                                   byte b = (byte) in.read();
-                                   if(b==13){
-                                       out.write(14);
-                                       out.flush();
-                                   }
+                           }
+                       } catch (IOException ex) {
+                           System.out.println("Unable to get streams from client");
 
-                        in  = new ObjectInputStream(client.getInputStream());
-                       out = new ObjectOutputStream(client.getOutputStream());
-                System.out.println("Новый клиент присоединился. Адресс:  "+client.getRemoteSocketAddress());
+                       }
+                   }
 
-                try {
-                    List<PlainText> list = (List<PlainText>) SerializationText.deSerialization(in);
-                    Converter.doingCommands(list, PATH_TO_MAIN_FOLDER,out,null);
-
-                          in.close();
-                          out.close();
-                          client.close();
-                } catch (ClassNotFoundException e) {
-                    in.close();
-                    out.close();
-                    client.close();
-                    e.printStackTrace();
-
-                }
-            }
-        } catch (IOException ex) {
-            System.out.println("Unable to get streams from client");
-
-        }
-    }
+               }).start();
 
 
+           } catch (IOException e) {
+               System.out.println("Unable to connect from client");
+           }
+       }
+
+   }
 }
