@@ -4,6 +4,8 @@ import ru.chabanov.COMMAND;
 import ru.chabanov.Converter;
 import ru.chabanov.PlainText;
 import ru.chabanov.SerializationText;
+import ru.chabanov.utils.AuthService;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,17 +15,19 @@ public class IO_Server extends Thread {
    private  int PORT_NUMBER;
     private   String PATH_TO_MAIN_FOLDER;
     private ServerSocket serverSocket;
-
+    private AuthService authService;
 
     public IO_Server(String path, int port) {
         this.PATH_TO_MAIN_FOLDER = path;
         this.PORT_NUMBER = port;
         try {
             serverSocket = new ServerSocket(PORT_NUMBER);
+            authService = new AuthService();
+            authService.connect();
             this.start();
             System.out.println("IO_Server start");
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Error in starting SERVER IO");
         }
 
 
@@ -48,8 +52,36 @@ public class IO_Server extends Thread {
 
                            try {
                                List<PlainText> list = (List<PlainText>) SerializationText.deSerialization(in);
-                               new Converter().doingCommands(list, PATH_TO_MAIN_FOLDER, out, null);
 
+
+                               if (list != null) {
+                                   for (int i =0; i<list.size();i++) {
+                                       if (list.get(i).getCommands() == COMMAND.CHECK_AUTH) {
+                                           if (list.get(i).getLogin() != null || list.get(i).getPassword() != null) {
+                                            String serverLogin = authService.getLoginByLoginAndPass(list.get(i).getLogin(), list.get(i).getPassword());
+                                               list.get(i).setCommands(COMMAND.RESPONSE_AUTH);
+
+                                               if (list.get(i).getLogin().equals(serverLogin)) {
+                                                   list.get(i).setAuth(true);
+
+                                               }else {
+                                                   list.get(i).setLogin("Неверный логин или пароль");
+                                                   list.get(i).setAuth(false);
+
+                                               }
+
+                                               new Converter().doingCommands(list, PATH_TO_MAIN_FOLDER, out, null);
+                                           }
+
+
+                                       }
+                                       else
+                                           if(list.get(i).getCommands()==COMMAND.CLIENT_IS_AUTH) {
+
+                                           new Converter().doingCommands(list, PATH_TO_MAIN_FOLDER+"\\" +(list.get(i).getLogin())+"\\", out, null);
+                                       }
+                                   }
+                               }
                                in.close();
                                out.close();
                                finalClient.close();

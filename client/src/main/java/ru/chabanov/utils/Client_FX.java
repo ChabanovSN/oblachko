@@ -1,32 +1,49 @@
-package ru.chabanov;
+package ru.chabanov.utils;
 
 
-
-import ru.chabanov.io_client.IO_Client;
-import ru.chabanov.nio_client.NIO_CLIENT_1;
 
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Callback;
+import ru.chabanov.COMMAND;
+import ru.chabanov.Converter;
+import ru.chabanov.PlainText;
+
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 public class Client_FX extends Application
 {
+
+    /// dialogwindow
+
+    private Text actionStatus;
+    private static final String titleTxt = "CrazyCloud";
+
+    ////////
 private  int number_of_client=1;
 
-
-
+private PlainText authPlainText=null;
+private Stage  stage;
 
   private TextField textField_path_to_main_folder = new TextField ();
 
@@ -41,7 +58,10 @@ private  int number_of_client=1;
 
     public static void main(String[] args)
     {
-        Application.launch(args);
+
+
+           Application.launch(args);
+
 
 
     }
@@ -50,7 +70,8 @@ private  int number_of_client=1;
     public void start(Stage stage)
     {
 
-              createWindow(stage);
+
+          this.stage =  startDialogWindow(stage);
 
         // Add mouse event handlers for the source
         sourceView.setOnDragDetected(new EventHandler<MouseEvent>()
@@ -89,6 +110,7 @@ private  int number_of_client=1;
                         Client_communication client = new Chose_option_client(number_of_client).client();
                 isNatty=client.isNetty();
                     if(client !=null){
+                        list.add(authPlainText);
                         list.add(new PlainText(COMMAND.SEND_TO_SERVER));
                         client.sendObgect(list);
                         dragDone(event, sourceView);
@@ -141,6 +163,7 @@ private  int number_of_client=1;
              Client_communication client = new Chose_option_client(number_of_client).client();
                 isNatty=client.isNetty();
                 if(client !=null){
+                    list.add(authPlainText);
                     list.add(new PlainText(COMMAND.SEND_TO_CLIENT));
                     client.sendObgect(list);
                     list.clear();
@@ -232,6 +255,7 @@ private  int number_of_client=1;
           List<PlainText> list = new ArrayList<>();
 for(PlainText pt :targetView.getSelectionModel().getSelectedItems()){
    list.add(new PlainText(pt.getNameFile(),null));}
+               list.add(authPlainText);
                list.add(new PlainText(COMMAND.DELETE_ON_SERVER));
                client.sendObgect(list);
                writeInfo(list, " удален с сервера");
@@ -285,6 +309,7 @@ for(PlainText pt :targetView.getSelectionModel().getSelectedItems()){
         stage.setScene(scene);
         stage.setTitle("Клиент серверное приложение ");
          stage.show();
+
     }
 
 
@@ -303,6 +328,7 @@ list.addAll(new Converter().getPlainTextList(textField_path_to_main_folder.getTe
     ObservableList<PlainText> list = FXCollections.<PlainText>observableArrayList();
     try {
         List<PlainText> list3 = new ArrayList<>();
+        list3.add(authPlainText);
         list3.add(new PlainText(COMMAND.SHOW_ON_SERVER_ONLY_NAME));
         Client_communication client = new Chose_option_client(number_of_client).client();
         isNatty=client.isNetty();
@@ -406,21 +432,7 @@ list.addAll(new Converter().getPlainTextList(textField_path_to_main_folder.getTe
         return list;
     }
 
-    private void removeSelectedFiles(ListView<PlainText> listView)
-    {
-        // Get all selected Fruits in a separate list to avoid the shared list issue
-        List<PlainText> selectedList = new ArrayList<PlainText>();
 
-        for(PlainText plainText : listView.getSelectionModel().getSelectedItems())
-        {
-            selectedList.add(plainText);
-        }
-
-        // Clear the selection
-        listView.getSelectionModel().clearSelection();
-        // Remove items from the selected list
-        listView.getItems().removeAll(selectedList);
-    }
 
     private void writeInfo(List<PlainText> list, String str){
         for(PlainText pt : list) {
@@ -431,5 +443,124 @@ list.addAll(new Converter().getPlainTextList(textField_path_to_main_folder.getTe
     private void writelog(String text)
     {
         this.loggingArea.appendText(text + "\n");
+    }
+
+    ////////////////////////////// dialog window
+
+    private Stage startDialogWindow(Stage primaryStage){
+        primaryStage.setTitle(titleTxt);
+
+        // Window label
+        Label label = new Label("Добро пожаловать в CrazyCloud");
+        label.setTextFill(Color.DARKBLUE);
+        label.setFont(Font.font("Calibri", FontWeight.BOLD, 25));
+        HBox labelHb = new HBox();
+        labelHb.setAlignment(Pos.CENTER);
+        labelHb.getChildren().add(label);
+
+        // Button
+        Button btn = new Button("Аутентификация");
+        btn.setOnAction(new DialogButtonListener());
+        HBox buttonHb = new HBox(10);
+        buttonHb.setAlignment(Pos.CENTER);
+        buttonHb.getChildren().addAll(btn);
+
+        // Status message text
+        actionStatus = new Text();
+        actionStatus.setFont(Font.font("Calibri", FontWeight.NORMAL, 20));
+        actionStatus.setFill(Color.FIREBRICK);
+
+        // Vbox
+        VBox vbox = new VBox(30);
+        vbox.setPadding(new Insets(25, 25, 25, 25));;
+        vbox.getChildren().addAll(labelHb, buttonHb, actionStatus);
+
+        // Scene
+        Scene scene = new Scene(vbox, 500, 250); // w x h
+        primaryStage.setScene(scene);
+        primaryStage.show();
+        return primaryStage;
+    }
+    private class DialogButtonListener implements EventHandler<ActionEvent> {
+
+        @Override
+        public void handle(ActionEvent e) {
+
+            displayDialog();
+        }
+    }
+
+    private void displayDialog() {
+
+        actionStatus.setText("");
+
+        // Custom dialog
+        Dialog<PlainText> dialog = new Dialog<>();
+        dialog.setTitle(titleTxt);
+        dialog.setHeaderText("В видите логин и пароль для аутентификации");
+        dialog.setResizable(true);
+
+        // Widgets
+        Label loginLabel = new Label("Логин: ");
+        Label passwordLabel = new Label("Пароль: ");
+        TextField loginText = new TextField();
+        PasswordField passwordText = new PasswordField();
+
+        // Create layout and add to dialog
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.CENTER);
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 35, 20, 35));
+        grid.add(loginLabel, 1, 1); // col=1, row=1
+        grid.add(loginText, 2, 1);
+        grid.add(passwordLabel, 1, 2); // col=1, row=2
+        grid.add(passwordText, 2, 2);
+        dialog.getDialogPane().setContent(grid);
+
+        // Add button to dialog
+        ButtonType buttonTypeOk = new ButtonType("Okay", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().add(buttonTypeOk );
+
+        // Result converter for dialog
+        dialog.setResultConverter(new Callback<ButtonType, PlainText>() {
+            @Override
+            public PlainText call(ButtonType b) {
+
+                if (b == buttonTypeOk) {
+
+                    List<PlainText> list = new ArrayList<>();
+                    PlainText plainText = new PlainText();
+                    plainText.setCommands(COMMAND.CHECK_AUTH);
+                    plainText.setLogin(loginText.getText());
+                    plainText.setPassword(passwordText.getText());
+                    list.add(plainText);
+                    Client_communication client = new Chose_option_client(1).client();
+                    client.sendObgect(list);
+                    plainText = client.receiveAuth();
+
+                    if( plainText !=null) {
+                        if (plainText.isAuth()) {
+                            authPlainText = plainText;
+                            authPlainText.setCommands(COMMAND.CLIENT_IS_AUTH);
+                        }
+                    }
+                    return plainText;
+                }
+
+                return null;
+            }
+        });
+
+        // Show dialog
+        Optional<PlainText> result = dialog.showAndWait();
+
+        if (result.isPresent()) {
+            if(result.get().isAuth()){
+               createWindow(stage);
+            }
+            else
+                actionStatus.setText("Ошибка: " + result.get().getLogin());
+        }
     }
 }

@@ -80,34 +80,38 @@ private void fillEmptyFilesOnServer(File file){
         return plainTextList;
     }
 
-    public  void convertionClassToFile(List<PlainText> list, String path) {
-        Writer writer=null;
-        File dir = new File(path+"\\");
+    public void convertionClassToFile(List<PlainText> list, String path) {
+        Writer writer = null;
+        File dir = new File(path + "\\");
+
         if (!dir.exists()) dir.mkdir();
-        for (PlainText newPlainText : list) {
-            if (newPlainText.getCommands() == null) {
+        if (list != null) {
+            for (PlainText newPlainText : list) {
+                if (newPlainText.getCommands() == null) {
 
-                try {
-
-                   writer = new BufferedWriter(new OutputStreamWriter(
-                            new FileOutputStream(path+newPlainText.getNameFile()), StandardCharsets.UTF_8));
-
-                    if(newPlainText.getContent()!=null)
-                    writer.write(newPlainText.getContent());
-                    writer.flush();
-                    writer.close();
-                } catch (IOException e) {
-                    System.out.println("Ошибка при конвертации класса в файл метод Converter.convertionClassToFile\n" +
-                            "класс "+newPlainText.getNameFile());
-                }finally {
                     try {
+
+                        writer = new BufferedWriter(new OutputStreamWriter(
+                                new FileOutputStream(path + newPlainText.getNameFile()), StandardCharsets.UTF_8));
+
+                        if (newPlainText.getContent() != null)
+                            writer.write(newPlainText.getContent());
+                        writer.flush();
                         writer.close();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        System.out.println("Ошибка при конвертации класса в файл метод Converter.convertionClassToFile\n" +
+                                "класс " + newPlainText.getNameFile());
+                    } finally {
+                        try {
+                            writer.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
         }
+        else System.out.println("list = null convertionClassToFile ");
     }
 
     public  PlainText convertionFileToClass(File fileName) {
@@ -150,7 +154,17 @@ private void fillEmptyFilesOnServer(File file){
         try {
 
             switch (pt.getCommands()) {
+                case RESPONSE_AUTH:
+                    if(ctx !=null){
+                        ctx.writeAndFlush(files);
+                        ctx.close();
+                    }
+                    else {
 
+                        SerializationText.serialization(stream, files);
+                    }
+                    files.remove(pt);
+                    break;
                 case SEND_TO_SERVER:
                            files.remove(pt);
                     if (ctx !=null)ctx.close();

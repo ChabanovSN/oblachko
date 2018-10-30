@@ -1,4 +1,4 @@
-package ru.chabanov;
+package ru.chabanov.utils;
 
 import ru.chabanov.io_client.IO_Client;
 import ru.chabanov.netty_client.NettyClient;

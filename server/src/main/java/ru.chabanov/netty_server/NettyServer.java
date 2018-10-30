@@ -11,16 +11,19 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import ru.chabanov.utils.AuthService;
 
 public class NettyServer {
 
     private static final int MAX_OBJ_SIZE = 1024 * 1024 * 100; // 10 mb
     private  int PORT_NUMBER;
     private   String PATH_TO_MAIN_FOLDER;
-
+    private AuthService authService;
     public NettyServer( String PATH_TO_MAIN_FOLDER,int PORT_NUMBER) {
         this.PORT_NUMBER = PORT_NUMBER;
         this.PATH_TO_MAIN_FOLDER = PATH_TO_MAIN_FOLDER;
+        authService = new AuthService();
+        authService.connect();
         try {
             run();
         } catch (Exception e) {
@@ -41,7 +44,7 @@ public class NettyServer {
                             socketChannel.pipeline().addLast(
                                     new ObjectDecoder(MAX_OBJ_SIZE, ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
-                                    new CloudServerHandler(PATH_TO_MAIN_FOLDER)
+                                    new CloudServerHandler(PATH_TO_MAIN_FOLDER, authService)
                             );
                         }
                     })

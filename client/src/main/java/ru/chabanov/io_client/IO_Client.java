@@ -1,15 +1,14 @@
 package ru.chabanov.io_client;
 import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
 import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
-import ru.chabanov.Client_communication;
+import ru.chabanov.COMMAND;
+import ru.chabanov.utils.Client_communication;
 import ru.chabanov.PlainText;
 import ru.chabanov.SerializationText;
 
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class IO_Client implements Closeable, Client_communication {
@@ -19,7 +18,7 @@ public class IO_Client implements Closeable, Client_communication {
     OutputStream oeos = null;
     InputStream  odis = null;
     private boolean isNatty;
-
+    private PlainText authInfo;
     public IO_Client(String host, int port) {
         this.host = host;
         this.port = port;
@@ -65,9 +64,17 @@ public class IO_Client implements Closeable, Client_communication {
 
         try {
             list = (List<PlainText>) SerializationText.deSerialization(odis);
-
+            if(list !=null) {
+                for (int i=0; i<list.size();i++){
+                  //  System.out.println(pt.getLogin()+" IOClient");
+                    if(list.get(i).getCommands()== COMMAND.RESPONSE_AUTH){
+                        authInfo = list.get(i);
+                        list.remove(list.get(i));
+                    }
+                }
+            }
         } catch (Exception e) {
-            System.out.println("Ошибка в receiveObject() Client IO ");
+            System.out.println("Ошибка в receiveObject() Client IO "+ e.getMessage());
 
         }
         return list;
@@ -96,5 +103,11 @@ public class IO_Client implements Closeable, Client_communication {
     @Override
     public boolean isNetty() {
         return isNatty;
+    }
+
+    @Override
+    public PlainText receiveAuth() {
+        receiveObject();
+        return authInfo;
     }
 }

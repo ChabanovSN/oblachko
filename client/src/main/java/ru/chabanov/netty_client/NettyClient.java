@@ -9,10 +9,9 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import ru.chabanov.COMMAND;
-import ru.chabanov.Client_communication;
+import ru.chabanov.utils.Client_communication;
 import ru.chabanov.PlainText;
 
-import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +20,7 @@ public class NettyClient implements Client_communication {
     private String host;
     private int port;
     private boolean isWritable=false;
-
+    private PlainText authInfo;
     private  CloudClientHandler cl = new CloudClientHandler();
 
 private    List<PlainText> innnerList = new ArrayList<>();
@@ -85,6 +84,18 @@ private    List<PlainText> innnerList = new ArrayList<>();
 
     @Override
     public  List<PlainText> receiveObject() {
+
+        if(innnerList !=null) {
+            for (int i=0; i<innnerList.size();i++){
+
+                if(innnerList.get(i).getCommands()== COMMAND.RESPONSE_AUTH){
+                    authInfo = innnerList.get(i);
+                    innnerList.remove(innnerList.get(i));
+                }
+            }
+        }
+
+
         return innnerList ;
     }
 
@@ -96,5 +107,11 @@ private    List<PlainText> innnerList = new ArrayList<>();
     @Override
     public boolean isNetty() {
         return true;
+    }
+
+    @Override
+    public PlainText receiveAuth() {
+        receiveObject();
+        return authInfo;
     }
 }
